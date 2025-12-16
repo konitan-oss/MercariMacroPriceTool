@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\MercariMacroPriceTool.Domain\MercariMacroPriceTool.Domain.csproj" />
+    <ProjectReference Include="..\MercariMacroPriceTool.Storage\MercariMacroPriceTool.Storage.csproj" />
+    <ProjectReference Include="..\MercariMacroPriceTool.Automation\MercariMacroPriceTool.Automation.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+</Project>

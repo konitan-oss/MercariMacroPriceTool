@@ -1,0 +1,128 @@
+﻿<Window x:Class="MercariMacroPriceTool.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MercariMacroPriceTool.App"
+        mc:Ignorable="d"
+        Title="Mercari Macro Price Tool" Height="700" Width="900">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="12" Orientation="Vertical" >
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8" VerticalAlignment="Center">
+                <Button x:Name="FetchItemsButton" Content="商品取得" Height="32" Width="140" Margin="0,0,8,0" Click="FetchItemsButton_Click" />
+                <Button x:Name="RunPriceButton" Content="価格改定を実行" Height="32" Width="160" Margin="0,0,8,0" Click="RunPriceButton_Click"/>
+                <Button x:Name="StopButton" Content="停止" Height="28" Width="80" Margin="0,0,8,0" VerticalAlignment="Center" Click="StopButton_Click" />
+                <Button x:Name="ClearSkipButton" Content="今日のスキップ解除" Height="32" Width="150" Margin="0,0,8,0" Click="ClearSkipButton_Click"/>
+                <Button x:Name="ResetItemButton" Content="初回に戻す（RunCountも消去）" Height="32" Width="210" Click="ResetItemButton_Click"/>
+            </StackPanel>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Vertical" Margin="0,0,8,0">
+                    <GroupBox Header="一覧取得設定" Margin="0,0,0,8" Padding="6">
+                        <StackPanel Orientation="Horizontal" Margin="4">
+                            <Label Content="StartRow" Width="70"/>
+                            <TextBox x:Name="StartRowTextBox" Width="80" Text="1" Margin="4,0,12,0"/>
+                            <Label Content="EndRow" Width="60"/>
+                            <TextBox x:Name="EndRowTextBox" Width="80" Text="500" Margin="4,0,12,0"/>
+                            <Label Content="検索文字" Width="70"/>
+                            <TextBox x:Name="SearchTextBox" Width="180" Text="" Margin="4,0,8,0"/>
+                            <Button x:Name="ApplyFilterButton" Content="フィルタ適用" Width="100" Click="ApplyFilterButton_Click"/>
+                            <TextBlock x:Name="CountSummaryTextBlock" Margin="12,0,0,0" VerticalAlignment="Center" Text="{Binding CountSummary}" />
+                            <TextBlock x:Name="SelectionSummaryTextBlock" Margin="12,0,0,0" VerticalAlignment="Center" Text="{Binding SelectionSummary}" />
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox Header="価格改定設定" Margin="0,0,0,8" Padding="6">
+                        <StackPanel Orientation="Horizontal" Margin="4">
+                            <Label Content="値下げ率(%)" Width="90"/>
+                            <TextBox x:Name="RatePercentTextBox" Width="80" Text="10" Margin="4,0,12,0"/>
+                            <Label Content="毎日値下げ(円)" Width="110"/>
+                            <TextBox x:Name="DailyDownYenTextBox" Width="80" Text="100" Margin="4,0,12,0"/>
+                        </StackPanel>
+                    </GroupBox>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Vertical">
+                    <GroupBox Header="待機設定" Margin="0,0,0,8" Padding="6">
+                        <StackPanel Orientation="Horizontal" Margin="4">
+                            <Label Content="待機①(秒)" Width="80"/>
+                            <TextBox x:Name="WaitAfterPauseTextBox" Width="80" Text="15" Margin="4,0,12,0"/>
+                            <Label Content="待機②(秒)" Width="80"/>
+                            <TextBox x:Name="WaitAfterResumeTextBox" Width="80" Text="250" Margin="4,0,12,0"/>
+                            <Label Content="商品間待機(秒)" Width="110"/>
+                            <TextBox x:Name="WaitBetweenItemsTextBox" Width="80" Text="2" Margin="4,0,12,0"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox Header="安定化設定（リトライ）" Margin="0,0,0,8" Padding="6">
+                        <StackPanel Orientation="Horizontal" Margin="4">
+                            <Label Content="リトライ回数" Width="90"/>
+                            <TextBox x:Name="RetryCountTextBox" Width="60" Text="2" Margin="4,0,12,0"/>
+                            <Label Content="リトライ待機(秒)" Width="110"/>
+                            <TextBox x:Name="RetryWaitTextBox" Width="60" Text="2" Margin="4,0,12,0"/>
+                        </StackPanel>
+                    </GroupBox>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+
+        <DataGrid x:Name="ListingsGrid" Grid.Row="1" Margin="12"
+                  ItemsSource="{Binding Listings}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  HeadersVisibility="Column"
+                  SelectionChanged="ListingsGrid_SelectionChanged">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="チェック" Width="50">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox
+                                IsChecked="{Binding IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Focusable="False" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Binding="{Binding Title}" Header="商品名" Width="*" />
+                <DataGridTextColumn Binding="{Binding Price}" Header="商品価格" Width="90" />
+                <DataGridTextColumn Binding="{Binding LastDownAtText}" Header="前回値下げ日時" Width="140"/>
+                <DataGridTextColumn Binding="{Binding LastDownLabelText}" Header="前回値下げ内容" Width="120"/>
+                <DataGridTemplateColumn Header="URL" Width="140">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Content="開く" Width="60" Margin="0,0,4,0" Click="OpenUrlButton_Click" Tag="{Binding ItemUrl}" />
+                                <Button Content="コピー" Width="60" Click="CopyUrlButton_Click" Tag="{Binding ItemUrl}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Binding="{Binding ResultStatus}" Header="実行結果" Width="90"/>
+                <DataGridTextColumn Binding="{Binding LastMessage}" Header="最終メッセージ" Width="260"/>
+                <DataGridTextColumn Binding="{Binding ExecutedAt}" Header="実行日付" Width="140"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <StackPanel Grid.Row="2" Margin="12">
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center"/>
+                <Button x:Name="ToggleLogButton" Content="ログを表示" Width="100" Margin="12,0,0,0" Click="ToggleLogButton_Click"/>
+            </StackPanel>
+            <StackPanel x:Name="LogArea" Visibility="Collapsed">
+                <TextBox Text="{Binding LogText}" IsReadOnly="True" Height="180" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>

@@ -1,0 +1,10 @@
+# Build artifacts
+bin/
+obj/
+
+# Playwright/browser state
+.local/
+.local/app.db
+
+# User-specific
+.vs/

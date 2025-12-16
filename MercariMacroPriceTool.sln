@@ -1,0 +1,48 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{4D388EC2-277E-42EA-AE3E-E92128311352}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MercariMacroPriceTool.App", "src\MercariMacroPriceTool.App\MercariMacroPriceTool.App.csproj", "{FAC760D5-1AE1-403B-A2F8-D265C7378743}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MercariMacroPriceTool.Automation", "src\MercariMacroPriceTool.Automation\MercariMacroPriceTool.Automation.csproj", "{29E221A9-E907-4B3D-B693-3FFC65E1388D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MercariMacroPriceTool.Domain", "src\MercariMacroPriceTool.Domain\MercariMacroPriceTool.Domain.csproj", "{AF3FE2C6-5D85-4107-A992-267C399ACD7A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MercariMacroPriceTool.Storage", "src\MercariMacroPriceTool.Storage\MercariMacroPriceTool.Storage.csproj", "{B578746A-049B-4D3F-B37D-FF45F3F719EA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FAC760D5-1AE1-403B-A2F8-D265C7378743}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAC760D5-1AE1-403B-A2F8-D265C7378743}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FAC760D5-1AE1-403B-A2F8-D265C7378743}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FAC760D5-1AE1-403B-A2F8-D265C7378743}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29E221A9-E907-4B3D-B693-3FFC65E1388D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29E221A9-E907-4B3D-B693-3FFC65E1388D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29E221A9-E907-4B3D-B693-3FFC65E1388D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29E221A9-E907-4B3D-B693-3FFC65E1388D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF3FE2C6-5D85-4107-A992-267C399ACD7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF3FE2C6-5D85-4107-A992-267C399ACD7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF3FE2C6-5D85-4107-A992-267C399ACD7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF3FE2C6-5D85-4107-A992-267C399ACD7A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B578746A-049B-4D3F-B37D-FF45F3F719EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B578746A-049B-4D3F-B37D-FF45F3F719EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B578746A-049B-4D3F-B37D-FF45F3F719EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B578746A-049B-4D3F-B37D-FF45F3F719EA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{FAC760D5-1AE1-403B-A2F8-D265C7378743} = {4D388EC2-277E-42EA-AE3E-E92128311352}
+		{29E221A9-E907-4B3D-B693-3FFC65E1388D} = {4D388EC2-277E-42EA-AE3E-E92128311352}
+		{AF3FE2C6-5D85-4107-A992-267C399ACD7A} = {4D388EC2-277E-42EA-AE3E-E92128311352}
+		{B578746A-049B-4D3F-B37D-FF45F3F719EA} = {4D388EC2-277E-42EA-AE3E-E92128311352}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,140 @@
+# MercariMacroPriceTool - AGENT.md
+
+## 目的
+Windowsアプリ（WPF）から、メルカリの出品商品に対して「人間の操作を再現するブラウザ自動操作」で以下を実行する。
+
+1 商品取得
+- https://jp.mercari.com/mypage/listings から商品一覧を取得
+- StartRow〜EndRow（1始まり）で取得範囲を指定
+- 出品中と公開停止中が混在しフィルタが無い前提
+- 公開停止中の商品はUIに表示しない（取得はして状態判定する）
+
+2 価格改定
+- UIでチェックされた商品だけ処理
+- 価格をルールに従って下げる
+- 「出品を一時停止」→待機①→「価格を元に戻す」→「出品を再開」→待機②
+- 商品ごとに値下げ回数を保持し、翌日は毎日値下げ額を100円ずつ増やす
+
+## 禁止事項
+- 非公式API利用をしない
+- 外部スクレイピングサービスを使わない
+- 資格情報（ID/パスワード）をコードやファイルに直書きしない
+- 自動化は利用者本人のアカウントで行う
+
+## 技術スタック
+- .NET 8
+- C#
+- WPF（MercariMacroPriceTool.App）
+- Playwright for .NET（MercariMacroPriceTool.Automation）
+- SQLite（Microsoft.Data.Sqlite）（MercariMacroPriceTool.Storage）
+
+## 価格計算ルール
+入力
+- RatePercent：値下げ率（例：10）
+- DailyDownYen：毎日値下げ額（例：100）
+- BasePrice：基準価格（商品ごとに保存、初回は取得時価格を採用）
+- RunCount：実行回数（初回1、翌日2…）
+
+計算
+- RateDown = floor(BasePrice * RatePercent / 100)
+- DailyDown = DailyDownYen * RunCount
+- NewPrice = BasePrice - (RateDown + DailyDown)
+
+端数
+- 端数は切り捨て（floor）
+- NewPriceが0未満になる場合は下限を1円に丸める
+
+実行回数の加算ルール
+- 同一日に同一商品を複数回RunCount加算しない（LastRunDateでガード）
+- 1サイクル（値下げ→停止→復帰まで）が完了した時だけRunCountを確定更新する
+
+## listingsページの商品取得仕様
+前提
+- listingsページは「出品中と公開停止中が混在」
+- フィルタは無い
+- 無限スクロールで追加読み込みされる可能性が高い
+
+仕様
+- StartRow〜EndRow（1始まり）で指定した範囲だけを対象に情報取得する
+- 取得する情報（最低限）
+  - ItemId（URLから抽出、永続化キー）
+  - Title
+  - Price（整数、円）
+  - ItemUrl（商品ページURLまたは編集導線に辿れるURL）
+  - StatusText（状態判定に使う表示文字列）
+  - IsPaused（公開停止中ならtrue）
+- UI表示は IsPaused=false のみ
+- 取得件数、表示件数、除外件数をログ出力する
+
+公開停止中判定
+- 表示テキストの候補を docs/SELECTORS.md で管理し、変更に強くする
+- 判定は「候補文字列を含むか」で行う（完全一致に寄せない）
+
+## WPF UI 最低限
+入力欄
+- RatePercent（デフォ10）
+- DailyDownYen（デフォ100）
+- WaitAfterPauseSec（デフォ15）
+- WaitAfterResumeSec（デフォ250）
+- StartRow（デフォ1）
+- EndRow（デフォ500）
+
+ボタン
+- 商品取得
+- 価格改定を実行
+- 停止（キャンセル）
+
+表（DataGrid）
+- チェック
+- 商品名
+- 価格
+- 状態（公開停止中など）
+- 更新日時（取れるなら）
+- いいね（取れるなら）
+- RunCount（保存値）
+- 次回値下げ後価格（計算値）
+- ログ（直近結果）
+
+実行中要件
+- UIが固まらない（async/await）
+- 停止ボタンでCancellationTokenを発火し、安全に停止する
+
+## Playwright 自動操作方針
+- ヘッドレス禁止（通常表示で起動）
+- Chromeを自動制御して「自動ソフトウェアで制御されています」表示が出る挙動にする
+- 初回のみ手動ログインを許可し、以後はstorageStateでログイン状態を維持する
+- セレクタは docs/SELECTORS.md に集約し、コードに散らさない
+- クリックや入力はlocator中心、待機は明示して理由をコメントする
+
+## 永続化（SQLite）テーブル案
+Items
+- ItemId TEXT PRIMARY KEY
+- ItemUrl TEXT NOT NULL
+- Title TEXT
+- BasePrice INTEGER NOT NULL
+- RunCount INTEGER NOT NULL
+- LastRunDate TEXT
+- UpdatedAt TEXT
+
+## 進め方（最重要）
+- タスクは小さく区切る
+- 1タスク完了ごとに日本語の完了レポートを必ず出す
+- レポートは reports/ にファイル保存し、同じ内容を最後にターミナルへ出力
+- レポート出力後は次タスクに進まず停止する（ユーザーが次指示を持ってくる運用）
+
+## 完了レポートのテンプレ
+ファイル名
+- reports/YYYYMMDD-HHMM_TASK-XX.md
+
+内容
+- タスク番号と目的
+- 実施内容（変更ファイル一覧）
+- 実行手順（コマンド、操作）
+- 動作確認結果（OK/NG、再現手順）
+- 既知の課題と次の一手
+
+## Definition of Done
+- dotnet build が成功
+- 実行手順が docs/RUNBOOK.md に追記済み
+- 例外時に落ちずログが残る
+- reports にレポートが残っている
