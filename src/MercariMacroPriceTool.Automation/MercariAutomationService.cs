@@ -228,9 +228,10 @@ public class MercariAutomationService
         var result = new PriceUpdateResult();
         var editSelectors = new[]
         {
-            "button:has-text(\"商品の編集\")",
             "a:has-text(\"商品の編集\")",
-            "a[href^=\"/sell/edit/\"]"
+            "button:has-text(\"商品の編集\")",
+            "a[href^=\"/sell/edit/\"]",
+            "[data-testid*=\"edit\"]"
         };
         var currentStep = "Init";
 
@@ -254,7 +255,7 @@ public class MercariAutomationService
             // 値下げ側
             await NavigateAsync(itemUrl, "NavigateItem");
             currentStep = "EditClick";
-            await ClickFirstAsync(editSelectors, "EditClick", retryCount, retryWaitSec, progress, cancellationToken, result);
+            await ClickFirstAsync(editSelectors, "EditClick", retryCount, retryWaitSec, progress, cancellationToken, result, 5000);
             _page = await EnsureOnEditPageAsync(_page!, progress, cancellationToken);
             progress?.Report("[HumanWait] AfterEditClick: 10 sec");
             await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
@@ -274,7 +275,7 @@ public class MercariAutomationService
             // 復帰側
             await NavigateAsync(itemUrl, "NavigateItemResume");
             currentStep = "EditBeforeResume";
-            await ClickFirstAsync(editSelectors, "EditBeforeResume", retryCount, retryWaitSec, progress, cancellationToken, result);
+            await ClickFirstAsync(editSelectors, "EditBeforeResume", retryCount, retryWaitSec, progress, cancellationToken, result, 5000);
             _page = await EnsureOnEditPageAsync(_page!, progress, cancellationToken);
             progress?.Report("[HumanWait] AfterEditClick: 10 sec");
             await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
@@ -398,7 +399,7 @@ public class MercariAutomationService
         throw new StepFailedException("EnsureEdit", 0, new TimeoutException($"編集ページに遷移できませんでした。current={page.Url}"));
     }
 
-    private async Task ClickFirstAsync(IReadOnlyList<string> selectors, string label, int retryCount, int retryWaitSec, IProgress<string>? progress, CancellationToken cancellationToken, PriceUpdateResult result)
+    private async Task ClickFirstAsync(IReadOnlyList<string> selectors, string label, int retryCount, int retryWaitSec, IProgress<string>? progress, CancellationToken cancellationToken, PriceUpdateResult result, int waitTimeoutMs = 30000)
     {
         if (_page == null) throw new InvalidOperationException("Page is not initialized.");
 
@@ -411,7 +412,8 @@ public class MercariAutomationService
                 var attempts = await ExecuteWithRetryAsync(label, retryCount, retryWaitSec, progress, cancellationToken, async () =>
                 {
                     var locator = _page.Locator(selector).First;
-                    await locator.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 30000 });
+                    await locator.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = waitTimeoutMs });
+                    try { await locator.ScrollIntoViewIfNeededAsync(); } catch { /* ignore */ }
                     await ClickWithRecoveryAsync(_page, locator, label, progress, cancellationToken);
                 });
 
