@@ -10,6 +10,7 @@ public class ListingRow : INotifyPropertyChanged
     public string? ItemId { get; set; }
     public string? Title { get; set; }
     public int Price { get; set; }
+    public string FormattedPrice { get; set; } = string.Empty;
     public string? ItemUrl { get; set; }
     public string? StatusText { get; set; }
     public int LikeCount { get; set; }

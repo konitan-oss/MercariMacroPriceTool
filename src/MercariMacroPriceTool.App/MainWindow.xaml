@@ -96,7 +96,7 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Binding="{Binding Title}" Header="商品名" Width="*" />
-                <DataGridTextColumn Binding="{Binding Price}" Header="商品価格" Width="90" />
+                <DataGridTextColumn Binding="{Binding FormattedPrice}" Header="商品価格" Width="90" />
                 <DataGridTextColumn Binding="{Binding LastDownAtText}" Header="前回値下げ日時" Width="140"/>
                 <DataGridTextColumn Binding="{Binding LastDownLabelText}" Header="前回値下げ内容" Width="120"/>
                 <DataGridTemplateColumn Header="URL" Width="140">

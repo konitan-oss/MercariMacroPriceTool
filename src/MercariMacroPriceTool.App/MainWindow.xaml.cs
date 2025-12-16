@@ -174,6 +174,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                         ItemId = item.ItemId,
                         Title = item.Title,
                         Price = displayPrice,
+                        FormattedPrice = displayPrice.ToString("N0"),
                         StatusText = item.StatusText,
                         ItemUrl = item.ItemUrl,
                         LastDownAtText = lastDownAtText,
@@ -371,10 +372,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 }
 
                 var execTime = DateTime.Now;
+                string resultStatusForWait = "失敗";
                 try
                 {
                     var result = await ProcessPriceUpdateAsync(row, ratePercent, dailyDownYen, waitAfterPause, waitAfterResume, retryCount, retryWait, today, token);
                     UpdateRowResult(row, result.Status, result.Message, execTime.ToString("yyyy-MM-dd HH:mm:ss"));
+                    resultStatusForWait = result.Status;
 
                     if (result.Status == "成功") success++;
                     else if (result.Status == "スキップ") skip++;
@@ -400,7 +403,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 }
 
                 var isLast = idx == selected.Count - 1;
-                if (!isLast && waitBetweenItems > 0)
+                if (!isLast && resultStatusForWait == "成功" && waitBetweenItems > 0)
                 {
                     StatusMessage = $"[WaitBetweenItems] {waitBetweenItems}s (next item exists)";
                     AppendLog(StatusMessage);
@@ -410,7 +413,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                         await Task.Delay(1000, token);
                     }
                 }
-                else if (isLast)
+                else if (isLast || resultStatusForWait != "成功")
                 {
                     var finalWait = 10;
                     StatusMessage = $"[WaitAfterLastItem] {finalWait}s (no next item)";
@@ -1212,9 +1215,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             SearchText = SearchTextBox.Text ?? string.Empty,
             RatePercent = ParseOrDefault(RatePercentTextBox.Text, 10),
             DailyDownYen = ParseOrDefault(DailyDownYenTextBox.Text, 100),
-            WaitAfterPauseSec = ParseOrDefault(WaitAfterPauseTextBox.Text, 15),
-            WaitAfterResumeSec = ParseOrDefault(WaitAfterResumeTextBox.Text, 250),
-            ItemGapSec = ParseOrDefault(WaitBetweenItemsTextBox.Text, 2),
+            WaitAfterPauseSec = ParseOrDefault(WaitAfterPauseTextBox.Text, 30),
+            WaitAfterResumeSec = ParseOrDefault(WaitAfterResumeTextBox.Text, 10),
+            ItemGapSec = ParseOrDefault(WaitBetweenItemsTextBox.Text, 250),
             RetryCount = ParseOrDefault(RetryCountTextBox.Text, 2),
             RetryWaitSec = ParseOrDefault(RetryWaitTextBox.Text, 2)
         };
@@ -1279,9 +1282,9 @@ public class AppSettings
         SearchText = string.Empty,
         RatePercent = 10,
         DailyDownYen = 100,
-        WaitAfterPauseSec = 15,
-        WaitAfterResumeSec = 250,
-        ItemGapSec = 2,
+        WaitAfterPauseSec = 30,
+        WaitAfterResumeSec = 10,
+        ItemGapSec = 250,
         RetryCount = 2,
         RetryWaitSec = 2
     };
