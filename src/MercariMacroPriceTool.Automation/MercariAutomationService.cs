@@ -226,6 +226,12 @@ public class MercariAutomationService
         if (_page == null) throw new InvalidOperationException("Playwright page is not initialized.");
 
         var result = new PriceUpdateResult();
+        var editSelectors = new[]
+        {
+            "button:has-text(\"商品の編集\")",
+            "a:has-text(\"商品の編集\")",
+            "a[href^=\"/sell/edit/\"]"
+        };
         var currentStep = "Init";
 
         async Task NavigateAsync(string url, string step)
@@ -248,10 +254,15 @@ public class MercariAutomationService
             // 値下げ側
             await NavigateAsync(itemUrl, "NavigateItem");
             currentStep = "EditClick";
-            await ClickFirstAsync(_editButtonSelectors, "EditClick", retryCount, retryWaitSec, progress, cancellationToken, result);
+            await ClickFirstAsync(editSelectors, "EditClick", retryCount, retryWaitSec, progress, cancellationToken, result);
+            _page = await EnsureOnEditPageAsync(_page!, progress, cancellationToken);
+            progress?.Report("[HumanWait] AfterEditClick: 10 sec");
+            await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
 
             currentStep = "PriceInput";
-            await FillPriceAsync(newPrice, "PriceInput", retryCount, retryWaitSec, progress, cancellationToken, result);
+            await FillPriceAsync(newPrice, "PriceInput", retryCount, retryWaitSec, progress, cancellationToken, result, () => ClickFirstAsync(editSelectors, "EditClick(Retry)", retryCount, retryWaitSec, progress, cancellationToken, result));
+            progress?.Report("[HumanWait] AfterPriceInput: 10 sec");
+            await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
 
             currentStep = "Pause";
             await ClickFirstAsync(_pauseSelectors, "Pause", retryCount, retryWaitSec, progress, cancellationToken, result);
@@ -263,10 +274,15 @@ public class MercariAutomationService
             // 復帰側
             await NavigateAsync(itemUrl, "NavigateItemResume");
             currentStep = "EditBeforeResume";
-            await ClickFirstAsync(_editButtonSelectors, "EditBeforeResume", retryCount, retryWaitSec, progress, cancellationToken, result);
+            await ClickFirstAsync(editSelectors, "EditBeforeResume", retryCount, retryWaitSec, progress, cancellationToken, result);
+            _page = await EnsureOnEditPageAsync(_page!, progress, cancellationToken);
+            progress?.Report("[HumanWait] AfterEditClick: 10 sec");
+            await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
 
             currentStep = "PriceInputRestore";
-            await FillPriceAsync(basePrice, "PriceInputRestore", retryCount, retryWaitSec, progress, cancellationToken, result);
+            await FillPriceAsync(basePrice, "PriceInputRestore", retryCount, retryWaitSec, progress, cancellationToken, result, () => ClickFirstAsync(editSelectors, "EditBeforeResume(Retry)", retryCount, retryWaitSec, progress, cancellationToken, result));
+            progress?.Report("[HumanWait] AfterPriceInput: 10 sec");
+            await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
 
             currentStep = "Resume";
             await ClickFirstAsync(_resumeSelectors, "Resume", retryCount, retryWaitSec, progress, cancellationToken, result);
@@ -344,6 +360,44 @@ public class MercariAutomationService
         }
     }
 
+    private static bool IsOnEditPage(IPage page)
+    {
+        return page.Url?.Contains("/sell/edit/", StringComparison.OrdinalIgnoreCase) == true;
+    }
+
+    private async Task<IPage> EnsureOnEditPageAsync(IPage page, IProgress<string>? progress, CancellationToken cancellationToken)
+    {
+        var target = "**/sell/edit/**";
+        progress?.Report($"[EnsureEdit] before url={page.Url}");
+
+        // 1) 同一タブでの遷移待ち
+        try
+        {
+            await page.WaitForURLAsync(target, new() { Timeout = 30000 });
+            progress?.Report($"[EnsureEdit] on edit page url={page.Url}");
+            return page;
+        }
+        catch
+        {
+            // continue to popup check
+        }
+
+        // 2) Popupで開かれた場合
+        try
+        {
+            var popupPage = await page.Context.WaitForPageAsync(new() { Timeout = 30000 });
+            await popupPage.WaitForURLAsync(target, new() { Timeout = 30000 });
+            progress?.Report($"[EnsureEdit] popup opened url={popupPage.Url}");
+            return popupPage;
+        }
+        catch
+        {
+            // ignore and throw below
+        }
+
+        throw new StepFailedException("EnsureEdit", 0, new TimeoutException($"編集ページに遷移できませんでした。current={page.Url}"));
+    }
+
     private async Task ClickFirstAsync(IReadOnlyList<string> selectors, string label, int retryCount, int retryWaitSec, IProgress<string>? progress, CancellationToken cancellationToken, PriceUpdateResult result)
     {
         if (_page == null) throw new InvalidOperationException("Page is not initialized.");
@@ -377,11 +431,26 @@ public class MercariAutomationService
         throw new StepFailedException(label, 0, new InvalidOperationException($"{label} に成功するセレクタが見つかりませんでした。"));
     }
 
-    private async Task FillPriceAsync(int price, string label, int retryCount, int retryWaitSec, IProgress<string>? progress, CancellationToken cancellationToken, PriceUpdateResult result)
+    private async Task FillPriceAsync(int price, string label, int retryCount, int retryWaitSec, IProgress<string>? progress, CancellationToken cancellationToken, PriceUpdateResult result, Func<Task>? retryEditAsync = null)
     {
         if (_page == null) throw new InvalidOperationException("Page is not initialized.");
 
-        foreach (var selector in _priceInputSelectors)
+        if (!IsOnEditPage(_page))
+        {
+            progress?.Report($"[{label}] not on edit page (url={_page.Url}), retry edit once");
+            if (retryEditAsync != null)
+            {
+                await retryEditAsync();
+                _page = await EnsureOnEditPageAsync(_page, progress, cancellationToken);
+            }
+        }
+
+        var selectors = new List<string>(_priceInputSelectors)
+        {
+            "input[inputmode=\"numeric\"]"
+        };
+
+        foreach (var selector in selectors)
         {
             cancellationToken.ThrowIfCancellationRequested();
             progress?.Report($"[{label}] セレクタ試行: {selector}");
@@ -400,6 +469,24 @@ public class MercariAutomationService
             return;
         }
 
+        // ラベルからのフォールバック
+        try
+        {
+            var labelLocator = _page.GetByLabel("販売価格", new() { Exact = false });
+            await labelLocator.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 30000 });
+            await ClickWithRecoveryAsync(_page, labelLocator, label + "/Focus(Label)", progress, cancellationToken);
+            await labelLocator.FillAsync(price.ToString());
+            progress?.Report($"[{label}] success via label (販売価格)");
+            result.LastStep = label;
+            await _page.WaitForTimeoutAsync(200);
+            return;
+        }
+        catch (Exception ex)
+        {
+            progress?.Report($"[{label}] label fallback failed: {ex.Message}");
+        }
+
+        progress?.Report($"[{label}] failed url={_page.Url}");
         throw new StepFailedException(label, 0, new InvalidOperationException("価格入力欄が見つかりません。"));
     }
 

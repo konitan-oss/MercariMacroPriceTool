@@ -399,11 +399,23 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     break;
                 }
 
-                if (idx != selected.Count - 1 && waitBetweenItems > 0)
+                var isLast = idx == selected.Count - 1;
+                if (!isLast && waitBetweenItems > 0)
                 {
-                    StatusMessage = $"Waiting {waitBetweenItems}s before next item...";
+                    StatusMessage = $"[WaitBetweenItems] {waitBetweenItems}s (next item exists)";
                     AppendLog(StatusMessage);
                     for (var i = 0; i < waitBetweenItems; i++)
+                    {
+                        token.ThrowIfCancellationRequested();
+                        await Task.Delay(1000, token);
+                    }
+                }
+                else if (isLast)
+                {
+                    var finalWait = 10;
+                    StatusMessage = $"[WaitAfterLastItem] {finalWait}s (no next item)";
+                    AppendLog(StatusMessage);
+                    for (var i = 0; i < finalWait; i++)
                     {
                         token.ThrowIfCancellationRequested();
                         await Task.Delay(1000, token);
