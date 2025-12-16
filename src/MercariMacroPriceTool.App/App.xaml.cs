@@ -9,5 +9,15 @@ namespace MercariMacroPriceTool.App;
 /// </summary>
 public partial class App : Application
 {
-}
+    protected override void OnStartup(StartupEventArgs e)
+    {
+        var progress = new Progress<string>(_ => { });
+        if (!PlaywrightBootstrap.EnsureBrowsersPath(progress))
+        {
+            Shutdown();
+            return;
+        }
 
+        base.OnStartup(e);
+    }
+}
